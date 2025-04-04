@@ -15,6 +15,7 @@ interface ReportStore {
 	updateReport: (id: string, report: Partial<Report>) => void;
 	deleteReport: (id: string) => void;
 	getReport: (id: string) => Report | undefined;
+	reorderReports: (fromIndex: number, toIndex: number) => void;
 }
 
 export const useReportStore = create<ReportStore>()(
@@ -46,6 +47,14 @@ export const useReportStore = create<ReportStore>()(
 			},
 			getReport: (id) => {
 				return get().reports.find((r) => r.id === id);
+			},
+			reorderReports: (fromIndex, toIndex) => {
+				set((state) => {
+					const newReports = [...state.reports];
+					const [movedItem] = newReports.splice(fromIndex, 1);
+					newReports.splice(toIndex, 0, movedItem);
+					return { reports: newReports };
+				});
 			},
 		}),
 		{
