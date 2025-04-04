@@ -29,6 +29,7 @@
 		"@mui/material": "^7.0.1",
 		"@tinymce/tinymce-react": "^6.1.0",
 		"@types/react-router-dom": "^5.3.3",
+		"openai": "^4.91.1",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
 		"react-router-dom": "^7.4.1",

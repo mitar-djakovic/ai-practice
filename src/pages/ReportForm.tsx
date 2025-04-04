@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 
+import { generateReportDraft, summarizeReportContent } from '../services/aiService';
 import { useReportStore } from '../store/reportStore';
 
 interface Report {
@@ -46,22 +47,36 @@ const ReportForm = () => {
 	};
 
 	const handleGenerateDraft = async () => {
-		// TODO: Implement AI draft generation
-		console.log('Generating draft...');
+		if (!report.title) {
+			return;
+		}
+		try {
+			setLoading(true);
+			const generatedContent = await generateReportDraft(report.title);
+			setReport({ ...report, content: generatedContent });
+		} catch (error) {
+			console.error('Error generating draft:', error);
+			// You might want to show an error message to the user here
+		} finally {
+			setLoading(false);
+		}
 	};
 
 	const handleSummarize = async () => {
-		// TODO: Implement content summarization
-		console.log('Summarizing content...');
+		if (!report.content) {
+			return;
+		}
+		try {
+			setLoading(true);
+			const summary = await summarizeReportContent(report.content);
+			setReport({ ...report, content: summary });
+		} catch (error) {
+			console.error('Error summarizing content:', error);
+			// You might want to show an error message to the user here
+		} finally {
+			setLoading(false);
+		}
 	};
-
-	if (loading) {
-		return (
-			<Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-				<CircularProgress />
-			</Box>
-		);
-	}
 
 	return (
 		<Box component='form' onSubmit={handleSubmit}>
@@ -76,43 +91,59 @@ const ReportForm = () => {
 				onChange={(e) => setReport({ ...report, title: e.target.value })}
 				sx={{ mb: 3 }}
 				required
+				disabled={loading}
 			/>
 
-			<Box sx={{ mb: 3 }}>
-				<Editor
-					apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
-					value={report.content}
-					onEditorChange={(content) => setReport({ ...report, content })}
-					init={{
-						height: 500,
-						menubar: true,
-						plugins: [
-							'advlist',
-							'autolink',
-							'lists',
-							'link',
-							'image',
-							'charmap',
-							'preview',
-							'anchor',
-							'searchreplace',
-							'visualblocks',
-							'code',
-							'fullscreen',
-							'insertdatetime',
-							'media',
-							'table',
-							'code',
-							'help',
-							'wordcount',
-						],
-						toolbar:
-							'undo redo | blocks | ' +
-							'bold italic forecolor | alignleft aligncenter ' +
-							'alignright alignjustify | bullist numlist outdent indent | ' +
-							'removeformat | help',
-					}}
-				/>
+			<Box sx={{ mb: 3, position: 'relative' }}>
+				{loading ? (
+					<Box
+						sx={{
+							height: 500,
+							display: 'flex',
+							justifyContent: 'center',
+							alignItems: 'center',
+							border: '1px solid #ccc',
+							borderRadius: 1,
+						}}
+					>
+						<CircularProgress />
+					</Box>
+				) : (
+					<Editor
+						apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+						value={report.content}
+						onEditorChange={(content) => setReport({ ...report, content })}
+						init={{
+							height: 500,
+							menubar: true,
+							plugins: [
+								'advlist',
+								'autolink',
+								'lists',
+								'link',
+								'image',
+								'charmap',
+								'preview',
+								'anchor',
+								'searchreplace',
+								'visualblocks',
+								'code',
+								'fullscreen',
+								'insertdatetime',
+								'media',
+								'table',
+								'code',
+								'help',
+								'wordcount',
+							],
+							toolbar:
+								'undo redo | blocks | ' +
+								'bold italic forecolor | alignleft aligncenter ' +
+								'alignright alignjustify | bullist numlist outdent indent | ' +
+								'removeformat | help',
+						}}
+					/>
+				)}
 			</Box>
 
 			<Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
