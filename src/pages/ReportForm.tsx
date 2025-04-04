@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import { Editor } from '@tinymce/tinymce-react';
+
+import { useReportStore } from '../store/reportStore';
 
 interface Report {
 	id: string;
@@ -19,21 +22,27 @@ const ReportForm = () => {
 		content: '',
 	});
 
+	const { addReport, updateReport, getReport } = useReportStore();
+
 	useEffect(() => {
 		if (id) {
-			// TODO: Fetch report data
 			setLoading(true);
-			// Simulate loading
-			setTimeout(() => {
-				setLoading(false);
-			}, 1000);
+			const existingReport = getReport(id);
+			if (existingReport) {
+				setReport(existingReport);
+			}
+			setLoading(false);
 		}
-	}, [id]);
+	}, [id, getReport]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		// TODO: Implement save functionality
-		console.log('Saving report:', report);
+		if (id) {
+			updateReport(id, report);
+		} else {
+			addReport(report as { title: string; content: string });
+		}
+		navigate('/');
 	};
 
 	const handleGenerateDraft = async () => {
@@ -69,16 +78,42 @@ const ReportForm = () => {
 				required
 			/>
 
-			<TextField
-				fullWidth
-				label='Content'
-				value={report.content}
-				onChange={(e) => setReport({ ...report, content: e.target.value })}
-				multiline
-				rows={10}
-				sx={{ mb: 3 }}
-				required
-			/>
+			<Box sx={{ mb: 3 }}>
+				<Editor
+					apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+					value={report.content}
+					onEditorChange={(content) => setReport({ ...report, content })}
+					init={{
+						height: 500,
+						menubar: true,
+						plugins: [
+							'advlist',
+							'autolink',
+							'lists',
+							'link',
+							'image',
+							'charmap',
+							'preview',
+							'anchor',
+							'searchreplace',
+							'visualblocks',
+							'code',
+							'fullscreen',
+							'insertdatetime',
+							'media',
+							'table',
+							'code',
+							'help',
+							'wordcount',
+						],
+						toolbar:
+							'undo redo | blocks | ' +
+							'bold italic forecolor | alignleft aligncenter ' +
+							'alignright alignjustify | bullist numlist outdent indent | ' +
+							'removeformat | help',
+					}}
+				/>
+			</Box>
 
 			<Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
 				<Button variant='outlined' onClick={handleGenerateDraft} disabled={!report.title}>

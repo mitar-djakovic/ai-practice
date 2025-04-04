@@ -1,23 +1,44 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Delete as DeleteIcon, Edit as EditIcon } from '@mui/icons-material';
+import {
+	Box,
+	Button,
+	IconButton,
+	Paper,
+	Table,
+	TableBody,
+	TableCell,
+	TableContainer,
+	TableHead,
+	TableRow,
+	TextField,
+	Typography,
+} from '@mui/material';
 
-interface Report {
-	id: string;
-	title: string;
-	content: string;
-	createdAt: Date;
-	updatedAt: Date;
-}
+import { useReportStore } from '../store/reportStore';
 
 const ReportsList = () => {
 	const [searchTerm, setSearchTerm] = useState('');
 	const navigate = useNavigate();
-	// TODO: Replace with actual data fetching
-	const reports: Report[] = [];
+	const { reports, deleteReport } = useReportStore();
+
+	const filteredReports = reports.filter((report) =>
+		report.title.toLowerCase().includes(searchTerm.toLowerCase()),
+	);
 
 	const handleCreateNew = () => {
 		navigate('/reports/new');
+	};
+
+	const handleEdit = (id: string) => {
+		navigate(`/reports/${id}`);
+	};
+
+	const handleDelete = (id: string) => {
+		if (window.confirm('Are you sure you want to delete this report?')) {
+			deleteReport(id);
+		}
 	};
 
 	return (
@@ -38,9 +59,38 @@ const ReportsList = () => {
 				sx={{ mb: 3 }}
 			/>
 
-			{/* TODO: Add reports list/table component */}
-			{reports.length === 0 && (
-				<Typography variant='body1' color='text.secondary'>
+			<TableContainer component={Paper}>
+				<Table>
+					<TableHead>
+						<TableRow>
+							<TableCell>Title</TableCell>
+							<TableCell>Created</TableCell>
+							<TableCell>Updated</TableCell>
+							<TableCell align='right'>Actions</TableCell>
+						</TableRow>
+					</TableHead>
+					<TableBody>
+						{filteredReports.map((report) => (
+							<TableRow key={report.id}>
+								<TableCell>{report.title}</TableCell>
+								<TableCell>{new Date(report.createdAt).toLocaleDateString()}</TableCell>
+								<TableCell>{new Date(report.updatedAt).toLocaleDateString()}</TableCell>
+								<TableCell align='right'>
+									<IconButton onClick={() => handleEdit(report.id)}>
+										<EditIcon />
+									</IconButton>
+									<IconButton onClick={() => handleDelete(report.id)}>
+										<DeleteIcon />
+									</IconButton>
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</TableContainer>
+
+			{filteredReports.length === 0 && (
+				<Typography variant='body1' color='text.secondary' sx={{ mt: 2 }}>
 					No reports found. Create your first report!
 				</Typography>
 			)}
