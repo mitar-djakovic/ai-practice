@@ -19,21 +19,7 @@ import {
 import { Editor } from '@tinymce/tinymce-react';
 
 import { generateReportDraft, summarizeReportContent } from '../services/aiService';
-import { useReportStore } from '../store/reportStore';
-
-interface Report {
-	id: string;
-	title: string;
-	content: string;
-	createdAt: Date;
-	updatedAt: Date;
-}
-
-interface ActivityItem {
-	action: string;
-	timestamp: string;
-	user: string;
-}
+import { Report, useReportStore } from '../store/reportStore';
 
 const ReportForm = () => {
 	const { id } = useParams();
@@ -42,39 +28,11 @@ const ReportForm = () => {
 	const [report, setReport] = useState<Partial<Report>>({
 		title: '',
 		content: '',
+		activityHistory: [],
 	});
 	const [showHistory, setShowHistory] = useState(false);
 
-	// Hardcoded activity history
-	const activityHistory: ActivityItem[] = [
-		{
-			action: 'Created report',
-			timestamp: '2023-06-15 14:30',
-			user: 'John Doe',
-		},
-		{
-			action: 'Generated draft content',
-			timestamp: '2023-06-15 14:35',
-			user: 'John Doe',
-		},
-		{
-			action: 'Modified content',
-			timestamp: '2023-06-15 14:42',
-			user: 'John Doe',
-		},
-		{
-			action: 'Summarized content',
-			timestamp: '2023-06-15 15:05',
-			user: 'Jane Smith',
-		},
-		{
-			action: 'Edited title',
-			timestamp: '2023-06-16 09:15',
-			user: 'John Doe',
-		},
-	];
-
-	const { addReport, updateReport, getReport } = useReportStore();
+	const { addReport, updateReport, getReport, addActivity } = useReportStore();
 
 	useEffect(() => {
 		if (id) {
@@ -105,6 +63,11 @@ const ReportForm = () => {
 			setLoading(true);
 			const generatedContent = await generateReportDraft(report.title);
 			setReport({ ...report, content: generatedContent });
+
+			// Add activity for AI content generation if we have a report ID
+			if (id) {
+				addActivity(id, 'Generated draft content with AI');
+			}
 		} catch (error) {
 			console.error('Error generating draft:', error);
 			// You might want to show an error message to the user here
@@ -121,12 +84,22 @@ const ReportForm = () => {
 			setLoading(true);
 			const summary = await summarizeReportContent(report.content);
 			setReport({ ...report, content: summary });
+
+			// Add activity for AI summarization if we have a report ID
+			if (id) {
+				addActivity(id, 'Summarized content with AI');
+			}
 		} catch (error) {
 			console.error('Error summarizing content:', error);
 			// You might want to show an error message to the user here
 		} finally {
 			setLoading(false);
 		}
+	};
+
+	// Function to format date for display
+	const formatDate = (date: Date) => {
+		return new Date(date).toLocaleString();
 	};
 
 	return (
@@ -223,24 +196,36 @@ const ReportForm = () => {
 			<Collapse in={showHistory} timeout='auto' unmountOnExit>
 				<Paper elevation={1} sx={{ mb: 3, p: 2 }}>
 					<List sx={{ width: '100%', bgcolor: 'background.paper' }}>
-						{activityHistory.map((activity, index) => (
-							<Box key={index}>
-								<ListItem alignItems='flex-start'>
-									<ListItemText
-										primary={activity.action}
-										secondary={
-											<>
-												<Typography component='span' variant='body2' color='text.primary'>
-													{activity.user}
-												</Typography>
-												{` — ${activity.timestamp}`}
-											</>
-										}
-									/>
-								</ListItem>
-								{index < activityHistory.length - 1 && <Divider component='li' />}
-							</Box>
-						))}
+						{report.activityHistory && report.activityHistory.length > 0 ? (
+							report.activityHistory.map((activity, index) => (
+								<Box key={index}>
+									<ListItem alignItems='flex-start'>
+										<ListItemText
+											primary={activity.type}
+											secondary={
+												<>
+													<Typography
+														component='span'
+														variant='body2'
+														color='text.primary'
+													>
+														{activity.user}
+													</Typography>
+													{` — ${formatDate(activity.timestamp)}`}
+												</>
+											}
+										/>
+									</ListItem>
+									{index < report.activityHistory!.length - 1 && (
+										<Divider component='li' />
+									)}
+								</Box>
+							))
+						) : (
+							<ListItem>
+								<ListItemText primary='No activity history available' />
+							</ListItem>
+						)}
 					</List>
 				</Paper>
 			</Collapse>
