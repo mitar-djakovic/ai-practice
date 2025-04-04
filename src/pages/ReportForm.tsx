@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Box, Button, CircularProgress, TextField, Typography } from '@mui/material';
+import HistoryIcon from '@mui/icons-material/History';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import {
+	Box,
+	Button,
+	CircularProgress,
+	Collapse,
+	Divider,
+	List,
+	ListItem,
+	ListItemText,
+	Paper,
+	TextField,
+	Typography,
+} from '@mui/material';
 import { Editor } from '@tinymce/tinymce-react';
 
 import { generateReportDraft, summarizeReportContent } from '../services/aiService';
@@ -14,6 +29,12 @@ interface Report {
 	updatedAt: Date;
 }
 
+interface ActivityItem {
+	action: string;
+	timestamp: string;
+	user: string;
+}
+
 const ReportForm = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
@@ -22,6 +43,36 @@ const ReportForm = () => {
 		title: '',
 		content: '',
 	});
+	const [showHistory, setShowHistory] = useState(false);
+
+	// Hardcoded activity history
+	const activityHistory: ActivityItem[] = [
+		{
+			action: 'Created report',
+			timestamp: '2023-06-15 14:30',
+			user: 'John Doe',
+		},
+		{
+			action: 'Generated draft content',
+			timestamp: '2023-06-15 14:35',
+			user: 'John Doe',
+		},
+		{
+			action: 'Modified content',
+			timestamp: '2023-06-15 14:42',
+			user: 'John Doe',
+		},
+		{
+			action: 'Summarized content',
+			timestamp: '2023-06-15 15:05',
+			user: 'Jane Smith',
+		},
+		{
+			action: 'Edited title',
+			timestamp: '2023-06-16 09:15',
+			user: 'John Doe',
+		},
+	];
 
 	const { addReport, updateReport, getReport } = useReportStore();
 
@@ -154,6 +205,45 @@ const ReportForm = () => {
 					Summarize Content
 				</Button>
 			</Box>
+
+			{/* Activity History Toggle Button */}
+			<Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+				<Button
+					startIcon={<HistoryIcon />}
+					endIcon={showHistory ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+					onClick={() => setShowHistory(!showHistory)}
+					variant='text'
+					sx={{ mb: 1 }}
+				>
+					Activity History
+				</Button>
+			</Box>
+
+			{/* Activity History Section */}
+			<Collapse in={showHistory} timeout='auto' unmountOnExit>
+				<Paper elevation={1} sx={{ mb: 3, p: 2 }}>
+					<List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+						{activityHistory.map((activity, index) => (
+							<Box key={index}>
+								<ListItem alignItems='flex-start'>
+									<ListItemText
+										primary={activity.action}
+										secondary={
+											<>
+												<Typography component='span' variant='body2' color='text.primary'>
+													{activity.user}
+												</Typography>
+												{` — ${activity.timestamp}`}
+											</>
+										}
+									/>
+								</ListItem>
+								{index < activityHistory.length - 1 && <Divider component='li' />}
+							</Box>
+						))}
+					</List>
+				</Paper>
+			</Collapse>
 
 			<Box sx={{ display: 'flex', gap: 2 }}>
 				<Button variant='contained' type='submit'>
