@@ -4,6 +4,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import {
+	Alert,
 	Box,
 	Button,
 	CircularProgress,
@@ -13,6 +14,7 @@ import {
 	ListItem,
 	ListItemText,
 	Paper,
+	Snackbar,
 	TextField,
 	Typography,
 } from '@mui/material';
@@ -25,6 +27,10 @@ const ReportForm = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<{ message: string; open: boolean }>({
+		message: '',
+		open: false,
+	});
 	const [report, setReport] = useState<Partial<Report>>({
 		title: '',
 		content: '',
@@ -57,6 +63,7 @@ const ReportForm = () => {
 
 	const handleGenerateDraft = async () => {
 		if (!report.title) {
+			setError({ message: 'Please enter a title before generating a draft', open: true });
 			return;
 		}
 		try {
@@ -70,7 +77,10 @@ const ReportForm = () => {
 			}
 		} catch (error) {
 			console.error('Error generating draft:', error);
-			// You might want to show an error message to the user here
+			setError({
+				message: 'Failed to generate draft. Please try again later.',
+				open: true,
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -78,6 +88,7 @@ const ReportForm = () => {
 
 	const handleSummarize = async () => {
 		if (!report.content) {
+			setError({ message: 'Please add some content before summarizing', open: true });
 			return;
 		}
 		try {
@@ -91,7 +102,10 @@ const ReportForm = () => {
 			}
 		} catch (error) {
 			console.error('Error summarizing content:', error);
-			// You might want to show an error message to the user here
+			setError({
+				message: 'Failed to summarize content. Please try again later.',
+				open: true,
+			});
 		} finally {
 			setLoading(false);
 		}
@@ -100,6 +114,10 @@ const ReportForm = () => {
 	// Function to format date for display
 	const formatDate = (date: Date) => {
 		return new Date(date).toLocaleString();
+	};
+
+	const handleCloseError = () => {
+		setError({ ...error, open: false });
 	};
 
 	return (
@@ -238,6 +256,17 @@ const ReportForm = () => {
 					Cancel
 				</Button>
 			</Box>
+
+			<Snackbar
+				open={error.open}
+				autoHideDuration={6000}
+				onClose={handleCloseError}
+				anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+			>
+				<Alert onClose={handleCloseError} severity='error' sx={{ width: '100%' }}>
+					{error.message}
+				</Alert>
+			</Snackbar>
 		</Box>
 	);
 };
